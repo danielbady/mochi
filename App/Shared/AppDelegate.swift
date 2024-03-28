@@ -24,6 +24,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     didFinishLaunchingWithOptions _: [UIApplication.LaunchOptionsKey: Any]? = nil
   ) -> Bool {
     store.send(.internal(.appDelegate(.didFinishLaunching)))
+    UserDefaults.standard.register(defaults: [
+        "userSettings.fastForwardAmount": 15,
+        "userSettings.fastBackwardAmount": 5
+        ])
     return true
   }
 }

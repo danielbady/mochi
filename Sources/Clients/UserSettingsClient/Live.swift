@@ -12,7 +12,11 @@ import Foundation
 
 extension UserSettingsClient: DependencyKey {
   public static let liveValue: Self = {
-    let userSettings = LockIsolated(UserSettings())
+    let userSettings = LockIsolated(UserSettings(
+    developerModeEnabled: UserDefaults.standard.bool(forKey: "userSettings.developerModeEnabled"),
+    fastForwardAmount: UserDefaults.standard.value(forKey: "userSettings.fastForwardAmount") as? Double,
+    fastBackwardAmount: UserDefaults.standard.value(forKey: "userSettings.fastBackwardAmount") as? Double
+    ))
     let subject = PassthroughSubject<UserSettings, Never>()
 
     return Self {
@@ -22,6 +26,9 @@ extension UserSettingsClient: DependencyKey {
         state = newValue
         subject.send(newValue)
         print("Save settings")
+        UserDefaults.standard.setValue(newValue.fastForwardAmount, forKey: "userSettings.fastForwardAmount")
+        UserDefaults.standard.setValue(newValue.fastBackwardAmount, forKey: "userSettings.fastBackwardAmount")
+        UserDefaults.standard.setValue(newValue.developerModeEnabled, forKey: "userSettings.developerModeEnabled")
       }
     } save: {
       // TODO: Save UserSettingsClient

@@ -116,10 +116,9 @@ extension VideoPlayerFeature: Reducer {
         }
 
       case .view(.didSkipForward):
-        let skipTime = state.playerSettings.skipTime // In seconds
         let currentProgress = state.player.playback?.progress ?? .zero
         let totalDuration = state.player.playback?.totalDuration ?? 1
-        let newProgress = min(1.0, max(0, currentProgress + (skipTime / totalDuration)))
+        let newProgress = min(1.0, max(0, currentProgress + (state.playerSettings.skipForwardTime / totalDuration)))
         return .merge(
           state.delayDismissOverlayIfNeeded(),
           .run { _ in
@@ -128,10 +127,9 @@ extension VideoPlayerFeature: Reducer {
         )
 
       case .view(.didSkipBackwards):
-        let skipTime = state.playerSettings.skipTime // In seconds
         let currentProgress = state.player.playback?.progress ?? .zero
         let totalDuration = state.player.playback?.totalDuration ?? 1
-        let newProgress = min(1.0, max(0, currentProgress - (skipTime / totalDuration)))
+        let newProgress = min(1.0, max(0, currentProgress - (state.playerSettings.skipBackwardTime / totalDuration)))
         return .merge(
           state.delayDismissOverlayIfNeeded(),
           .run { _ in
