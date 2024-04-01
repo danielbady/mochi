@@ -2,7 +2,7 @@
 //  AppDelegate.swift
 //  mochi
 //
-//  Created by ErrorErrorError on 5/19/23.
+//  Created by MochiTeam on 5/19/23.
 //
 //
 
