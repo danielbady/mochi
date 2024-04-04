@@ -249,21 +249,21 @@ struct HistoryView: View {
 
 // MARK: - SettingsFeatureView_Previews
 
-#Preview {
-  SettingsFeature.View(
-    store: .init(
-      initialState: .init(),
-      reducer: { SettingsFeature() },
-      withDependencies: { deps in
-        deps.userSettings.get = {
-          .init(
-            theme: .dark,
-            appIcon: .default,
-            developerModeEnabled: true
-          )
-        }
-      }
-    )
-  )
-  .themeable()
-}
+//#Preview {
+//  SettingsFeature.View(
+//    store: .init(
+//      initialState: .init(),
+//      reducer: { SettingsFeature() },
+//      withDependencies: { deps in
+//        deps.userSettings.get = {
+//          .init(
+//            theme: .dark,
+//            appIcon: .default,
+//            developerModeEnabled: true
+//          )
+//        }
+//      }
+//    )
+//  )
+//  .themeable()
+//}

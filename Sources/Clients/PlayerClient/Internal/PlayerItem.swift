@@ -25,7 +25,8 @@ struct MetaPayload {
 
 // MARK: - PlayerItem
 
-final class PlayerItem: AVPlayerItem {
+final class PlayerItem: AVPlayerItem, ObservableObject {
+    @Published var videourl: AVURLAsset
   var payload: MetaPayload
 
   private let resourceQueue: DispatchQueue
@@ -51,6 +52,8 @@ final class PlayerItem: AVPlayerItem {
       // TODO: Validate if this is allowed or considered a private api
       options: ["AVURLAssetHTTPHeaderFieldsKey": headers]
     )
+      
+      self.videourl = asset
 
     super.init(
       asset: asset,
@@ -58,7 +61,7 @@ final class PlayerItem: AVPlayerItem {
         "duration",
         "availableMediaCharacteristicsWithMediaSelectionOptions"
       ]
-    )
+      )
 
     asset.resourceLoader.setDelegate(self, queue: resourceQueue)
   }

@@ -300,6 +300,7 @@ extension Logs {
         Text(message)
           .font(.footnote)
           .frame(maxWidth: .infinity, alignment: .leading)
+          .textSelection(.enabled)
       }
       .frame(maxWidth: .infinity)
     }
@@ -355,19 +356,19 @@ extension ModuleLoggerLevel {
   }
 }
 
-#Preview {
-  Logs.View(
-    store: .init(
-      initialState: .init(),
-      reducer: {
-        EmptyReducer()
-      },
-      withDependencies: { deps in
-        deps.loggerClient.get = {
-          SystemLogEvent.stubs(count: 20)
-        }
-      }
-    )
-  )
-  .themeable()
-}
+//#Preview {
+//  Logs.View(
+//    store: .init(
+//      initialState: .init(),
+//      reducer: {
+//        EmptyReducer()
+//      },
+//      withDependencies: { deps in
+//        deps.loggerClient.get = {
+//          SystemLogEvent.stubs(count: 20)
+//        }
+//      }
+//    )
+//  )
+//  .themeable()
+//}
