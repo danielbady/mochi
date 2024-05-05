@@ -74,6 +74,7 @@ public struct ContentCore: Reducer {
     case didTapDownloadPlaylist(Playlist.Item.ID)
     case setDownloadedEpisodes([String])
     case downloadSelection(PresentationAction<DownloadSelection.Action>)
+    case updateCache([Playlist.Group])
   }
 
   public enum Error: Swift.Error, Equatable, Sendable {
@@ -151,6 +152,9 @@ public struct ContentCore: Reducer {
 
       case let .update(option, response):
         state.update(option, response)
+        
+      case .updateCache:
+        break
 
       case .downloadSelection:
         break
@@ -206,8 +210,9 @@ extension ContentCore.State {
       try await withTaskCancellation(id: Cancellable.fetchContent, cancelInFlight: true) {
         let module = try await moduleClient.getModule(repoModuleId)
         do {
-          
-          await send(.update(option: option, .loaded(try await module.playlistEpisodes(playlistId, option))))
+          let newGroups = try await module.playlistEpisodes(playlistId, option)
+          await send(.updateCache(newGroups))
+          await send(.update(option: option, .loaded(newGroups)))
         } catch let error {
           await send(.update(option: option, cachedGroups != nil ? .loaded(cachedGroups!) : .failed(error)))
         }

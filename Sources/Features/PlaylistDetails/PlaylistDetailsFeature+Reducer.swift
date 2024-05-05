@@ -133,6 +133,18 @@ extension PlaylistDetailsFeature {
           
       case let .internal(.setHasDownloadedContent(isDownloaded)):
         state.hasDownloadedContent = isDownloaded
+        
+      case let .internal(.content(.updateCache(newCache))):
+        if (!state.isInLibrary) {
+          break
+        }
+        let playlist = state.playlist
+        let details = state.details.value
+        let repoModuleId = state.content.repoModuleId
+        return .run { send in
+          try await offlineManagerClient.cache(.init(groups: newCache, playlist: playlist, details: details, repoModuleId: repoModuleId))
+        }
+        
 
       case let .internal(.content(.didTapPlaylistItem(groupId, variantId, pageId, itemId, _))):
         guard state.content.groups.value != nil else {
