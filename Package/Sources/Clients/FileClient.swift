@@ -9,5 +9,6 @@
 struct FileClient: _Client {
     var dependencies: any Dependencies {
         ComposableArchitecture()
+        SharedModels()
     }
 }

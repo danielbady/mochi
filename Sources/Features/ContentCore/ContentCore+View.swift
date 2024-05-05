@@ -208,19 +208,17 @@ extension ContentCore {
                       FillAspectImage(url: item.thumbnail ?? viewStore.playlist.posterImage)
                         .aspectRatio(16 / 9, contentMode: .fit)
                         .cornerRadius(12)
-
+                      
                       Spacer()
                         .frame(height: 8)
-
-                      Text(String(format: contentType.itemTypeWithNumber, item.number.withoutTrailingZeroes))
-                        .font(.footnote.weight(.semibold))
-                        .foregroundColor(.init(white: 0.4))
-
+                      
                       Spacer()
                         .frame(height: 4)
-
+                      
                       Text(item.title ?? String(format: contentType.itemTypeWithNumber, item.number.withoutTrailingZeroes))
                         .font(.body.weight(.semibold))
+                        .foregroundStyle(Color.primary)
+                        .multilineTextAlignment(.leading)
                     }
                     .frame(width: 228)
                     .contentShape(Rectangle())
@@ -232,6 +230,51 @@ extension ContentCore {
                       }
                     }
                     .id(item.id)
+//                    Menu {
+//                      Button() {
+//                        store.send(.didTapDownloadPlaylist(item.id))
+//                      } label: {
+//                        Label("Download episode", systemImage: "square.and.arrow.down")
+//                      }
+//                      .buttonStyle(.plain)
+//                    } label: {
+//                      VStack(alignment: .leading, spacing: 0) {
+//                        FillAspectImage(url: item.thumbnail ?? viewStore.playlist.posterImage)
+//                          .aspectRatio(16 / 9, contentMode: .fit)
+//                          .cornerRadius(12)
+//
+//                        Spacer()
+//                          .frame(height: 8)
+//                        
+//                        WithViewStore(store, observe: \.downloadedEpisodes) { viewStore in
+//                          HStack(spacing: 10) {
+//                            Text(String(format: contentType.itemTypeWithNumber, item.number.withoutTrailingZeroes))
+//                              .font(.footnote.weight(.semibold))
+//                            if (viewStore.state.contains(item.id.rawValue.replacingOccurrences(of: "/", with: "\\"))) {
+//                              Image(systemName: "cloud.fill")
+//                            }
+//                          }
+//                          .foregroundColor(.init(white: 0.4))
+//                        }
+//                        
+//                        Spacer()
+//                          .frame(height: 4)
+//
+//                        Text(item.title ?? String(format: contentType.itemTypeWithNumber, item.number.withoutTrailingZeroes))
+//                          .font(.body.weight(.semibold))
+//                          .foregroundStyle(Color.primary)
+//                          .multilineTextAlignment(.leading)
+//                      }
+//                      .frame(width: 228)
+//                      .contentShape(Rectangle())
+//                      .id(item.id)
+//                    } primaryAction:  {
+//                      if let groupId = groupLoadable.value?.id,
+//                         let variantId = variantLoadable.value?.id,
+//                         let pageId = pageLoadable.value?.id {
+//                        store.send(.didTapPlaylistItem(groupId, variantId, pageId, id: item.id, shouldReset: true))
+//                      }
+//                    }
                   }
                   .frame(maxHeight: .infinity, alignment: .top)
                 }
@@ -269,6 +312,110 @@ extension ContentCore {
         .animation(.easeInOut, value: _selectedGroupId)
         .animation(.easeInOut, value: _selectedVariantId)
         .animation(.easeInOut, value: _selectedPagingId)
+        .sheet(
+          store: store.scope(
+            state: \.$downloadSelection,
+            action: \.downloadSelection
+          ),
+          state: /DownloadSelection.State.selection,
+          action: DownloadSelection.Action.selection
+        ) { store in
+          VStack {
+            Capsule()
+              .frame(width: 48, height: 4)
+              .foregroundColor(.gray.opacity(0.26))
+              .padding(.top, 8)
+            
+            WithViewStore(store, observe: \.`self`) { viewStore in
+              List {
+                LoadableView(loadable: viewStore.state.sources) { sources in
+                  Section("Sources") {
+                    ForEach(sources) { source in
+                      Button {
+                        store.send(.selectSource(source))
+                      } label: {
+                        HStack(alignment: .center) {
+                          Text(source.displayName)
+                          Spacer()
+                          if (viewStore.state.selectedSource?.id == source.id) { Image(systemName: "checkmark").foregroundColor(.blue) }
+                        }
+                      }
+                      .foregroundColor(Color.primary)
+                    }
+                  }
+                  
+                  if let selectedSource = viewStore.state.selectedSource {
+                    Section("Servers") {
+                      ForEach(sources.first(where: { $0.id.rawValue == selectedSource.id.rawValue })?.servers ?? []) { server in
+                        Button {
+                          store.send(.selectServer(server))
+                        } label: {
+                          HStack(alignment: .center) {
+                            Text(server.displayName)
+                            Spacer()
+                            if (viewStore.state.selectedServer?.id == server.id) {
+                              if case .loading = viewStore.state.serverResponse {
+                                ProgressView().progressViewStyle(CircularProgressViewStyle(tint: Color.blue))
+                              } else {
+                                Image(systemName: "checkmark").foregroundColor(.blue)
+                              }
+                            }
+                          }
+                        }
+                        .foregroundColor(Color.primary)
+                      }
+                    }
+                  }
+                }
+                
+                LoadableView(loadable: viewStore.serverResponse) { serverResponse in
+                  Section("Quality") {
+                    ForEach(serverResponse.links) { link in
+                      Button {
+                        store.send(.selectQuality(link))
+                      } label: {
+                        HStack(alignment: .center) {
+                          Text(link.quality.description)
+                          Spacer()
+                          if (viewStore.state.selectedQuality?.id == link.id) { Image(systemName: "checkmark").foregroundColor(.blue) }
+                        }
+                      }
+                      .foregroundColor(Color.primary)
+                    }
+                  }
+                  Section("Subtitles") {
+                    ForEach(serverResponse.subtitles) { subtitle in
+                      Button {
+                        store.send(.selectSubtitle(subtitle))
+                      } label: {
+                      HStack(alignment: .center) {
+                          Text(subtitle.name)
+                          Spacer()
+                          if (viewStore.state.selectedSubtitle?.id == subtitle.id) { Image(systemName: "checkmark").foregroundColor(.blue) }
+                        }
+                      }
+                      .foregroundColor(Color.primary)
+                    }
+                  }
+                  if let selectedQuality = viewStore.state.selectedQuality {
+                    Button {
+                      store.send(.download(viewStore.selectedSource!, viewStore.selectedServer!, selectedQuality, viewStore.selectedSubtitle != nil ? [viewStore.selectedSubtitle!] : [], serverResponse.skipTimes, viewStore.state.episodeId))
+                    } label: {
+                      Text("Download")
+                    }
+                    .frame(maxWidth: .infinity, alignment: .center)
+                  }
+                }
+              }
+              .animation(.easeInOut, value: viewStore.state.selectedSource)
+              .animation(.easeInOut, value: viewStore.serverResponse.value)
+              .animation(.easeInOut, value: viewStore.state.selectedQuality)
+            }
+          }
+          .onAppear {
+            store.send(.didAppear)
+          }
+        }
       }
       .onChange(of: _selectedGroupId) { _ in
         _selectedVariantId = nil
@@ -276,6 +423,9 @@ extension ContentCore {
       }
       .onChange(of: _selectedVariantId) { _ in
         _selectedPagingId = nil
+      }
+      .onAppear {
+        store.send(.didAppear)
       }
     }
   }

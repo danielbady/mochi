@@ -38,6 +38,14 @@ extension AppFeature.View: View {
                       action: \.internal.discover
                     )
                   )
+                case .library:
+                  LibraryFeature.View(
+                    store: store.scope(
+                      state: \.library,
+                      action: \.internal.library
+                    )
+                  )
+                  .accentColor(nil)
                 case .repos:
                   ReposFeature.View(
                     store: store.scope(

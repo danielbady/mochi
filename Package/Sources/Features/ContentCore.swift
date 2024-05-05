@@ -13,6 +13,8 @@ struct ContentCore: _Feature {
         Architecture()
         FoundationHelpers()
         ModuleClient()
+        PlaylistHistoryClient()
+        OfflineManagerClient()
         LoggerClient()
         Tagged()
         ComposableArchitecture()

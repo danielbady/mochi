@@ -16,6 +16,7 @@ struct Settings: _Feature {
         SharedModels()
         Styling()
         ViewComponents()
+        PlaylistHistoryClient()
         UserSettingsClient()
         ComposableArchitecture()
         NukeUI()

@@ -17,6 +17,7 @@ import SharedModels
 import Styling
 import SwiftUI
 import ViewComponents
+import OfflineManagerClient
 
 public struct PlaylistDetailsFeature: Feature {
   public struct Destination: ComposableArchitecture.Reducer {
@@ -58,6 +59,8 @@ public struct PlaylistDetailsFeature: Feature {
     public var content: ContentCore.State
     public var playlist: Playlist { content.playlist }
     public var details: Loadable<Playlist.Details>
+    public var isInLibrary: Bool = false
+    public var hasDownloadedContent: Bool = false
 
     @PresentationState public var destination: Destination.State?
 
@@ -68,14 +71,13 @@ public struct PlaylistDetailsFeature: Feature {
     }
 
     public var resumableState: Resumable {
-      // TODO: Show start based on last resumed or selected content?
       if playlist.status == .upcoming {
         return .upcoming
       }
       if let group = content.groups.value?.first(where: { $0.default ?? false }) ?? content.groups.value?.first,
          let variant = group.variants.value?.first {
         if let epId = playlistHistory.value?.epId {
-          if let page = variant.pagings.value?.first(where: { $0.items.value!.contains(where: { $0.id.rawValue == epId }) }),
+          if let page = variant.pagings.value?.first(where: { ($0.items.value ?? []).contains(where: { $0.id.rawValue == epId }) }),
              let item = page.items.value?.first(where: { $0.id.rawValue == epId }) {
             return .resume(group.id, variant.id, page.id, item.id, item.title ?? "", playlistHistory.value?.timestamp ?? 0.0)
           }
@@ -159,6 +161,8 @@ public struct PlaylistDetailsFeature: Feature {
       case didTapToRetryDetails
       case didTapOnReadMore
       case binding(BindingAction<State>)
+      case didTapAddToLibrary
+      case didTapRemoveDownloads
     }
 
     @CasePathable
@@ -179,6 +183,8 @@ public struct PlaylistDetailsFeature: Feature {
       case playlistDetailsResponse(Loadable<Playlist.Details>)
       case content(ContentCore.Action)
       case destination(PresentationAction<Destination.Action>)
+      case setBookmark(Bool)
+      case setHasDownloadedContent(Bool)
     }
 
     case view(ViewAction)
@@ -200,6 +206,8 @@ public struct PlaylistDetailsFeature: Feature {
     }
   }
 
+  @Dependency(\.offlineManagerClient) var offlineManagerClient
+  @Dependency(\.fileClient) var fileClient
   @Dependency(\.moduleClient) var moduleClient
   @Dependency(\.databaseClient) var databaseClient
   @Dependency(\.repoClient) var repoClient

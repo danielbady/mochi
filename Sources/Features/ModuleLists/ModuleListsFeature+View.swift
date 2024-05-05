@@ -49,6 +49,12 @@ extension ModuleListsFeature.View: View {
               .padding(.horizontal)
 
             Button {
+              store.send(.view(.didTapHome))
+            } label: {
+              Image(systemName: "house")
+            }
+            .buttonStyle(.materialToolbarItem)
+            Button {
               store.send(.view(.didTapToDismiss))
             } label: {
               Image(systemName: "xmark")

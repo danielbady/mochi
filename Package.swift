@@ -780,6 +780,7 @@ struct DeviceClient: _Client {
 struct FileClient: _Client {
     var dependencies: any Dependencies {
         ComposableArchitecture()
+        SharedModels()
     }
 }
 //
@@ -858,6 +859,22 @@ extension ModuleClient: Testable {
             Resource.copy("Resources")
         }
     }
+}
+//
+//  OfflineManagerClient.swift
+//
+//
+//  Created by DeNeRr on 06.04.2024.
+//
+
+import Foundation
+
+struct OfflineManagerClient: _Client {
+  var dependencies: any Dependencies {
+    FileClient()
+    SharedModels()
+    ComposableArchitecture()
+  }
 }
 //
 //  PlayerClient.swift
@@ -1218,6 +1235,8 @@ struct ContentCore: _Feature {
         Architecture()
         FoundationHelpers()
         ModuleClient()
+        PlaylistHistoryClient()
+        OfflineManagerClient()
         LoggerClient()
         Tagged()
         ComposableArchitecture()
@@ -1247,6 +1266,30 @@ struct Discover: _Feature {
         ViewComponents()
         ComposableArchitecture()
         NukeUI()
+        OfflineManagerClient()
+        FileClient()
+    }
+}
+//
+//  Library.swift
+//
+//
+//  Created by DeNeRr on 09.04.2024.
+//
+
+import Foundation
+
+struct Library: _Feature {
+    var dependencies: any Dependencies {
+        Architecture()
+        FileClient()
+        ViewComponents()
+        ComposableArchitecture()
+        OfflineManagerClient()
+        Styling()
+        PlaylistDetails()
+        NukeUI()
+        SharedModels()
     }
 }
 //
@@ -1265,6 +1308,7 @@ struct MochiApp: _Feature {
     var dependencies: any Dependencies {
         Architecture()
         Discover()
+        Library()
         Repos()
         Settings()
         SharedModels()
@@ -1313,6 +1357,7 @@ struct PlaylistDetails: _Feature {
         LoggerClient()
         ModuleClient()
         RepoClient()
+        OfflineManagerClient()
         PlaylistHistoryClient()
         Styling()
         SharedModels()
@@ -1387,6 +1432,7 @@ struct Settings: _Feature {
         SharedModels()
         Styling()
         ViewComponents()
+        PlaylistHistoryClient()
         UserSettingsClient()
         ComposableArchitecture()
         NukeUI()
@@ -1651,6 +1697,7 @@ let package = Package {
     ModuleLists()
     PlaylistDetails()
     Discover()
+    Library()
     Repos()
     Search()
     Settings()

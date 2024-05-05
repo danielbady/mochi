@@ -46,6 +46,7 @@ public struct ModuleListsFeature: Feature {
     public enum ViewAction: SendableAction {
       case onTask
       case didTapToDismiss
+      case didTapHome
       case didSelectModule(Repo.ID, Module.ID)
     }
 

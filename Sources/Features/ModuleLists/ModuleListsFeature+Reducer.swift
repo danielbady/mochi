@@ -12,8 +12,6 @@ import DatabaseClient
 import Foundation
 import RepoClient
 
-let defaults = UserDefaults.standard
-
 extension ModuleListsFeature {
   public var body: some ReducerOf<Self> {
     Reduce { state, action in
@@ -29,13 +27,19 @@ extension ModuleListsFeature {
         return .run {
           await dismiss()
         }
+        
+      case .view(.didTapHome):
+        UserDefaults.standard.set(nil, forKey: "LastSelectedModuleId")
+        UserDefaults.standard.set(nil, forKey: "LastSelectedRepoId")
+        return .concatenate(.send(.delegate(.selectedModule(nil))))
+
 
       case let .view(.didSelectModule(repoId, moduleId)):
         guard let module = state.repos[id: repoId]?.modules[id: moduleId]?.manifest else {
           break
         }
-        defaults.set(moduleId.rawValue, forKey: "LastSelectedModuleId")
-        defaults.set(repoId.rawValue, forKey: "LastSelectedRepoId")
+        UserDefaults.standard.set(moduleId.rawValue, forKey: "LastSelectedModuleId")
+        UserDefaults.standard.set(repoId.rawValue, forKey: "LastSelectedRepoId")
         return .concatenate(.send(.delegate(.selectedModule(.init(repoId: repoId, module: module)))))
 
       case let .internal(.fetchRepos(.success(repos))):

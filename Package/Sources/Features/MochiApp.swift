@@ -14,6 +14,7 @@ struct MochiApp: _Feature {
     var dependencies: any Dependencies {
         Architecture()
         Discover()
+        Library()
         Repos()
         Settings()
         SharedModels()

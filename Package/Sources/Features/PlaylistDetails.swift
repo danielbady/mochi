@@ -15,6 +15,7 @@ struct PlaylistDetails: _Feature {
         LoggerClient()
         ModuleClient()
         RepoClient()
+        OfflineManagerClient()
         PlaylistHistoryClient()
         Styling()
         SharedModels()

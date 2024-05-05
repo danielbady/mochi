@@ -14,6 +14,7 @@ import ModuleClient
 import PlayerClient
 import PlaylistHistoryClient
 import SharedModels
+import FileClient
 
 // MARK: - Cancellables
 
@@ -411,14 +412,24 @@ extension VideoPlayerFeature.State {
 
   public mutating func fetchSourcesIfNecessary(forced: Bool = false) -> Effect<VideoPlayerFeature.Action> {
     @Dependency(\.moduleClient) var moduleClient
+    @Dependency(\.fileClient) var fileClient
 
     let repoModuleId = content.repoModuleId
     let playlist = playlist
     let episodeId = selected.itemId
-
+    let prefersOffline = prefersOffline
+    
     if forced || !loadables[episodeId: episodeId].hasInitialized {
       loadables.update(with: episodeId, response: .loading)
       return .run { send in
+        if (prefersOffline) {
+          if let directory = try? fileClient.retrieveLibraryDirectory(root: .downloaded, playlist: playlist.id.rawValue, episode: episodeId.rawValue).appendingPathComponent("metadata.json") {
+            if let sources = try? JSONDecoder().decode(EpisodeMetadata.self, from: FileManager.default.contents(atPath: directory.path ?? "") ?? .init()) {
+              return await send(.internal(.sourcesResponse(episodeId, .loaded([sources.source]))))
+            }
+          }
+        }
+
         try await withTaskCancellation(id: Cancellables.fetchingSources, cancelInFlight: true) {
           let value = try await moduleClient.withModule(id: repoModuleId) { module in
             try await module.playlistEpisodeSources(
@@ -441,12 +452,14 @@ extension VideoPlayerFeature.State {
 
   public mutating func fetchServerIfNecessary(forced: Bool = false) -> Effect<VideoPlayerFeature.Action> {
     @Dependency(\.moduleClient) var moduleClient
+    @Dependency(\.fileClient) var fileClient
 
     let repoModuleId = content.repoModuleId
     let playlist = playlist
     let episodeId = selected.itemId
     let sourceId = selected.sourceId
     let serverId = selected.serverId
+    let prefersOffline = prefersOffline
 
     guard let sourceId else {
       return .none
@@ -458,6 +471,18 @@ extension VideoPlayerFeature.State {
     if forced || !loadables[serverId: serverId].hasInitialized {
       loadables.update(with: serverId, response: .loading)
       return .run { send in
+        if (prefersOffline) {
+          if let directory = try? fileClient.retrieveLibraryDirectory(root: .downloaded, playlist: playlist.id.rawValue, episode: episodeId.rawValue) {
+            if let sources = try? JSONDecoder().decode(EpisodeMetadata.self, from: FileManager.default.contents(atPath: directory.appendingPathComponent("metadata.json").path) ?? .init()) {
+              let linkPath = directory.appendingPathComponent("data").appendingPathExtension("movpkg")
+              return await send(.internal(.serverResponse(serverId, .loaded(.init(links: [.init(url: linkPath, quality: sources.link.quality, format: sources.link.format)], subtitles: sources.subtitles.map{
+                var newValue = $0
+                newValue.url = directory.appendingPathComponent(newValue.url.lastPathComponent)
+                return newValue
+              }, headers: [:], skipTimes: sources.skipTimes)))))
+            }
+          }
+        }
         try await withTaskCancellation(id: Cancellables.fetchingServer, cancelInFlight: true) {
           let value = try await moduleClient.withModule(id: repoModuleId) { module in
             try await module.playlistEpisodeServer(

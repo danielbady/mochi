@@ -21,5 +21,7 @@ struct Discover: _Feature {
         ViewComponents()
         ComposableArchitecture()
         NukeUI()
+        OfflineManagerClient()
+        FileClient()
     }
 }
