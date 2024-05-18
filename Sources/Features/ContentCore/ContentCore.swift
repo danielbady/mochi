@@ -71,7 +71,8 @@ public struct ContentCore: Reducer {
       shouldReset: Bool = false
     )
     case observeDirectory(URL, Bool)
-    case didTapDownloadPlaylist(Playlist.Item.ID)
+    case didTapDownloadPlaylist(Playlist.Item)
+    case didTapRemoveDownloadedPlaylist(Playlist.Item)
     case setDownloadedEpisodes([String])
     case downloadSelection(PresentationAction<DownloadSelection.Action>)
     case updateCache([Playlist.Group])
@@ -87,22 +88,23 @@ public struct ContentCore: Reducer {
     Reduce { state, action in
       switch action {
       case .didAppear:
-        break
-//        @Dependency(\.fileClient) var fileClient
-//        let playlistId = state.playlist.id.rawValue
-//        return .run { send in
-//            if let directory = try? fileClient.retrieveLibraryDirectory(root: .downloaded, playlist: playlistId), FileManager.default.fileExists(atPath: directory.path) {
-//              await send(.observeDirectory(directory, true))
-//            } else if let directory = try? fileClient.retrieveLibraryDirectory(root: .downloaded) {
-//              await send(.observeDirectory(directory, false))
-//            }
-//          }
+        let playlist = state.playlist
+        return .run { send in
+          @Dependency(\.fileClient) var fileClient
+          let playlistDir = try fileClient.retrieveLibraryDirectory(root: .downloaded, playlist: playlist.id.rawValue)
+          if fileClient.fileExists(playlistDir.path) {
+            await send(.observeDirectory(playlistDir, true))
+          } else {
+            await send(.observeDirectory(playlistDir.deletingLastPathComponent(), false))
+          }
+
+        }
 
       case let .didTapContent(option):
         return state.fetchContent(option)
           
-      case let .didTapDownloadPlaylist(episodeId):
-        state.downloadSelection = .selection(.init(repoModuleId: state.repoModuleId, playlistId: state.playlist.id, episodeId: episodeId))
+      case let .didTapDownloadPlaylist(episode):
+        state.downloadSelection = .selection(.init(repoModuleId: state.repoModuleId, playlistId: state.playlist.id, episodeId: episode.id, episodeTitle: episode.title ?? "Unknown Title"))
         
       case let .didTapPlaylistItem(groupId, variantId, pageId, itemId, shouldReset):
         @Dependency(\.playlistHistoryClient) var playlistHistoryClient
@@ -123,6 +125,13 @@ public struct ContentCore: Reducer {
               try? await playlistHistoryClient.updateTimestamp(.init(repoId: repoModuleId.repoId.absoluteString, moduleId: repoModuleId.moduleId.rawValue, playlistId: playlist.id.rawValue), 0)
             }
           }
+        }
+        
+      case let .didTapRemoveDownloadedPlaylist(episode):
+        @Dependency(\.fileClient) var fileClient
+        let playlist = state.playlist
+        return .run { _ in
+          try fileClient.removePlaylistFromLibrary(.downloaded, playlist.id.rawValue, episode.id.rawValue)
         }
         
       case let .observeDirectory(directory, isPlaylistDirectory):

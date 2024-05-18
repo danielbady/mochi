@@ -12,5 +12,6 @@ struct OfflineManagerClient: _Client {
     FileClient()
     SharedModels()
     ComposableArchitecture()
+    FlyingFox()
   }
 }

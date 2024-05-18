@@ -19,6 +19,8 @@ public struct OfflineManagerClient {
   public var download: @Sendable (DownloadAsset) async throws -> Void
   public var cache: @Sendable (CacheAsset) async throws -> Void
   public var remove: @Sendable (RemoveType, String, String?) async throws -> Void
+  public var togglePause: @Sendable (Int) async throws -> Void
+  public var observeDownloading: @Sendable () -> AsyncStream<[DownloadingItem]>
 }
 
 // MARK: TestDependencyKey
@@ -27,7 +29,9 @@ extension OfflineManagerClient: TestDependencyKey {
   public static let testValue = Self(
     download: unimplemented("\(Self.self).download"),
     cache: unimplemented("\(Self.self).cache"),
-    remove: unimplemented("\(Self.self).remove")
+    remove: unimplemented("\(Self.self).remove"),
+    togglePause: unimplemented("\(Self.self).togglePause"),
+    observeDownloading: unimplemented("\(Self.self).observeDownloading")
   )
 }
 

@@ -204,6 +204,7 @@ extension ContentCore {
               ScrollView(.horizontal, showsIndicators: false) {
                 HStack(alignment: .top, spacing: 12) {
                   ForEach(items.value ?? Self.placeholderItems, id: \.number) { item in
+                    let isDownloaded = viewStore.downloadedEpisodes.contains(item.id.rawValue.replacingOccurrences(of: "/", with: "\\"))
                     VStack(alignment: .leading, spacing: 0) {
                       FillAspectImage(url: item.thumbnail ?? viewStore.playlist.posterImage)
                         .aspectRatio(16 / 9, contentMode: .fit)
@@ -211,6 +212,16 @@ extension ContentCore {
                       
                       Spacer()
                         .frame(height: 8)
+                        
+                      HStack {
+                        Text(String(format: contentType.itemTypeWithNumber, item.number.withoutTrailingZeroes))
+                          .font(.footnote.weight(.semibold))
+                          .foregroundColor(.init(white: 0.4))
+                        if isDownloaded {
+                          Image(systemName: "cloud.fill")
+                            .foregroundColor(.init(white: 0.4))
+                        }
+                      }
                       
                       Spacer()
                         .frame(height: 4)
@@ -230,51 +241,22 @@ extension ContentCore {
                       }
                     }
                     .id(item.id)
-//                    Menu {
-//                      Button() {
-//                        store.send(.didTapDownloadPlaylist(item.id))
-//                      } label: {
-//                        Label("Download episode", systemImage: "square.and.arrow.down")
-//                      }
-//                      .buttonStyle(.plain)
-//                    } label: {
-//                      VStack(alignment: .leading, spacing: 0) {
-//                        FillAspectImage(url: item.thumbnail ?? viewStore.playlist.posterImage)
-//                          .aspectRatio(16 / 9, contentMode: .fit)
-//                          .cornerRadius(12)
-//
-//                        Spacer()
-//                          .frame(height: 8)
-//                        
-//                        WithViewStore(store, observe: \.downloadedEpisodes) { viewStore in
-//                          HStack(spacing: 10) {
-//                            Text(String(format: contentType.itemTypeWithNumber, item.number.withoutTrailingZeroes))
-//                              .font(.footnote.weight(.semibold))
-//                            if (viewStore.state.contains(item.id.rawValue.replacingOccurrences(of: "/", with: "\\"))) {
-//                              Image(systemName: "cloud.fill")
-//                            }
-//                          }
-//                          .foregroundColor(.init(white: 0.4))
-//                        }
-//                        
-//                        Spacer()
-//                          .frame(height: 4)
-//
-//                        Text(item.title ?? String(format: contentType.itemTypeWithNumber, item.number.withoutTrailingZeroes))
-//                          .font(.body.weight(.semibold))
-//                          .foregroundStyle(Color.primary)
-//                          .multilineTextAlignment(.leading)
-//                      }
-//                      .frame(width: 228)
-//                      .contentShape(Rectangle())
-//                      .id(item.id)
-//                    } primaryAction:  {
-//                      if let groupId = groupLoadable.value?.id,
-//                         let variantId = variantLoadable.value?.id,
-//                         let pageId = pageLoadable.value?.id {
-//                        store.send(.didTapPlaylistItem(groupId, variantId, pageId, id: item.id, shouldReset: true))
-//                      }
-//                    }
+                    .contextMenu {
+                      Button() {
+                        store.send(.didTapDownloadPlaylist(item))
+                      } label: {
+                        Label("Download episode", systemImage: "square.and.arrow.down")
+                      }
+                      .buttonStyle(.plain)
+                      if isDownloaded {
+                        Button(role: .destructive) {
+                          store.send(.didTapRemoveDownloadedPlaylist(item))
+                        } label: {
+                          Label("Remove episode", systemImage: "trash")
+                        }
+                        .buttonStyle(.plain)
+                      }
+                    }
                   }
                   .frame(maxHeight: .infinity, alignment: .top)
                 }
@@ -399,7 +381,7 @@ extension ContentCore {
                   }
                   if let selectedQuality = viewStore.state.selectedQuality {
                     Button {
-                      store.send(.download(viewStore.selectedSource!, viewStore.selectedServer!, selectedQuality, viewStore.selectedSubtitle != nil ? [viewStore.selectedSubtitle!] : [], serverResponse.skipTimes, viewStore.state.episodeId))
+                      store.send(.download(viewStore.selectedSource!, viewStore.selectedServer!, selectedQuality, viewStore.selectedSubtitle != nil ? [viewStore.selectedSubtitle!] : [], serverResponse.skipTimes, viewStore.state.episodeId, viewStore.state.episodeTitle))
                     } label: {
                       Text("Download")
                     }

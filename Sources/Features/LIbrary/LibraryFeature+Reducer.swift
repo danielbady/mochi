@@ -36,6 +36,9 @@ extension LibraryFeature: Reducer {
               cachedGroups: fileMetadata.groups
             ),
             details: fileMetadata.details != nil ? .loaded(fileMetadata.details!) : .pending)))
+            
+        case let .view(.didTapDownloadQueue):
+          state.path.append(.downloadQueue(.init()))
 
         case let .view(.didTapRemoveBookmark(cache)):
           return .run { _ in

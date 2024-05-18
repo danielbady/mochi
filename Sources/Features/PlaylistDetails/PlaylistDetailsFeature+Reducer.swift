@@ -111,8 +111,9 @@ extension PlaylistDetailsFeature {
 
       case let .internal(.playlistDetailsResponse(loadable)):
         state.details = loadable
+        break
         
-      case let .internal(.content(.downloadSelection(.presented(.selection(.download(source, server, link, subtitles, skipTimes, episodeId)))))):
+      case let .internal(.content(.downloadSelection(.presented(.selection(.download(source, server, link, subtitles, skipTimes, episodeId, episodeTitle)))))):
         let playlist = state.playlist
         let details = state.details.value
         let groups = state.content.groups.value
@@ -121,6 +122,7 @@ extension PlaylistDetailsFeature {
           try await offlineManagerClient.download(.init(
             episodeMetadata: .init(link: link, source: source, subtitles: subtitles, server: server, skipTimes: skipTimes),
             episodeId: episodeId,
+            episodeTitle: episodeTitle,
             groups: groups,
             playlist: playlist,
             details: details,

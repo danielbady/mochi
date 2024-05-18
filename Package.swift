@@ -874,6 +874,7 @@ struct OfflineManagerClient: _Client {
     FileClient()
     SharedModels()
     ComposableArchitecture()
+    FlyingFox()
   }
 }
 //
@@ -1028,6 +1029,20 @@ import Foundation
 struct FluidGradient: PackageDependency {
     var dependency: Package.Dependency {
         .package(url: "https://github.com/Cindori/FluidGradient.git", exact: "1.0.0")
+    }
+}
+//
+//  FlyingFox.swift
+//  
+//
+//  Created by DeNeRr on 09.05.2024.
+//
+
+import Foundation
+
+struct FlyingFox: PackageDependency {
+    var dependency: Package.Dependency {
+        .package(url: "https://github.com/swhitty/FlyingFox.git", .upToNextMajor(from: "0.14.0"))
     }
 }
 //
@@ -1271,6 +1286,25 @@ struct Discover: _Feature {
     }
 }
 //
+//  DownloadQueue.swift
+//  
+//
+//  Created by DeNeRr on 16.05.2024.
+//
+
+import Foundation
+
+struct DownloadQueue: _Feature {
+  var dependencies: any Dependencies {
+    Architecture()
+    FileClient()
+    ViewComponents()
+    ComposableArchitecture()
+    OfflineManagerClient()
+    Styling()
+  }
+}
+//
 //  Library.swift
 //
 //
@@ -1288,6 +1322,7 @@ struct Library: _Feature {
         OfflineManagerClient()
         Styling()
         PlaylistDetails()
+        DownloadQueue()
         NukeUI()
         SharedModels()
     }

@@ -14,6 +14,7 @@ import ViewComponents
 import Styling
 import PlaylistDetails
 import AVKit
+import DownloadQueue
 
 // MARK: - LibraryFeature + View
 
@@ -55,27 +56,27 @@ extension LibraryFeature.View: View {
             }
             .animation(.easeInOut, value: viewStore.searchedPlaylists)
             .animation(.easeInOut, value: playlists)
-//            .safeAreaInset(edge: .top) {
-//              ScrollView(.horizontal, showsIndicators: false) {
-//                WithViewStore(store, observe: \.showOfflineOnly) { viewStore in
-//                  Button {
-//                    viewStore.send(.didTapShowDownloadedOnly)
-//                  } label: {
-//                    Text("Downloaded")
-//                      .font(.footnote)
-//                      .foregroundStyle(viewStore.state ? Color.white : Theme.pastelRed)
-//                      .padding(8)
-//                      .background(
-//                        Capsule()
-//                          .style(
-//                            withStroke: Color.gray.opacity(0.2),
-//                            fill: viewStore.state ? Theme.pastelRed : buttonBackgroundColor
-//                          )
-//                      )
-//                  }
-//                }
-//              }
-//            }
+            .safeAreaInset(edge: .top) {
+              ScrollView(.horizontal, showsIndicators: false) {
+                WithViewStore(store, observe: \.showOfflineOnly) { viewStore in
+                  Button {
+                    viewStore.send(.didTapShowDownloadedOnly)
+                  } label: {
+                    Text("Downloaded")
+                      .font(.footnote)
+                      .foregroundStyle(viewStore.state ? Color.white : Theme.pastelRed)
+                      .padding(8)
+                      .background(
+                        Capsule()
+                          .style(
+                            withStroke: Color.gray.opacity(0.2),
+                            fill: viewStore.state ? Theme.pastelRed : buttonBackgroundColor
+                          )
+                      )
+                  }
+                }
+              }
+            }
             .padding(.horizontal)
           }
           .searchable(text: viewStore.$searchValue.removeDuplicates(), placement: .toolbar)
@@ -108,6 +109,14 @@ extension LibraryFeature.View: View {
           .buttonStyle(.plain)
           #endif
         }
+        ToolbarItem(placement: .topBarTrailing) {
+          Button {
+            store.send(.view(.didTapDownloadQueue))
+          } label: {
+            Image(systemName: "arrow.down.circle")
+          }
+          .foregroundColor(Theme.pastelRed)
+        }
       }
       .navigationTitle("")
 #if os(iOS)
@@ -121,6 +130,12 @@ extension LibraryFeature.View: View {
             /LibraryFeature.Path.State.playlistDetails,
             action: LibraryFeature.Path.Action.playlistDetails,
             then: { store in PlaylistDetailsFeature.View(store: store) }
+          )
+        case .downloadQueue:
+          CaseLet(
+            /LibraryFeature.Path.State.downloadQueue,
+            action: LibraryFeature.Path.Action.downloadQueue,
+            then: { store in DownloadQueueFeature.View(store: store) }
           )
         }
       }

@@ -66,6 +66,10 @@ extension FileClient {
     }
   }
   
+  public func retrieveLibraryDirectory() throws -> URL {
+    return try self.url(.documentDirectory, .userDomainMask, nil, false)
+    .LibraryDir()
+  }
   public func retrieveLibraryDirectory(root: LibraryDirectory, playlist: String? = nil, episode: String? = nil) throws -> URL {
     var url = try self.url(.documentDirectory, .userDomainMask, nil, false)
     .LibraryDir()
@@ -80,10 +84,14 @@ extension FileClient {
   }
   
   public func removePlaylistFromLibrary(_ root: LibraryDirectory, _ playlist: String, _ episode: String? = nil) throws {
-    let url = try self.url(.documentDirectory, .userDomainMask, nil, false)
+    var url = try self.url(.documentDirectory, .userDomainMask, nil, false)
     .LibraryDir()
     .appendingPathComponent(root.rawValue)
     .appendingPathComponent(playlist.sanitized)
+    
+    if let episode = episode {
+      url = url.appendingPathComponent(episode.sanitized)
+    }
     
     if (fileExists(url.path)) {
       try remove(url)

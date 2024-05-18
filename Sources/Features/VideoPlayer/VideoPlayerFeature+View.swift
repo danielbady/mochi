@@ -588,8 +588,7 @@ extension VideoPlayerFeature.View {
         contentType: .video,
         selectedGroupId: viewStore.groupId,
         selectedVariantId: viewStore.variantId,
-        selectedPageId: viewStore.pageId,
-        selectedItemId: viewStore.itemId
+        selectedPageId: viewStore.pageId
       )
     }
   }

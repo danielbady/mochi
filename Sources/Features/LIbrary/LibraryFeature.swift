@@ -13,6 +13,7 @@ import SwiftUI
 import ViewComponents
 import PlaylistDetails
 import SharedModels
+import DownloadQueue
 
 
 // MARK: - LibraryFeature
@@ -23,18 +24,22 @@ public struct LibraryFeature: Feature {
     @dynamicMemberLookup
     public enum State: Equatable, Sendable {
       case playlistDetails(PlaylistDetailsFeature.State)
+      case downloadQueue(DownloadQueueFeature.State)
     }
 
     @CasePathable
     @dynamicMemberLookup
     public enum Action: Equatable, Sendable {
       case playlistDetails(PlaylistDetailsFeature.Action)
+      case downloadQueue(DownloadQueueFeature.Action)
     }
 
     @ReducerBuilder<State, Action> public var body: some ReducerOf<Self> {
-
       Scope(state: \.playlistDetails, action: \.playlistDetails) {
         PlaylistDetailsFeature()
+      }
+      Scope(state: \.downloadQueue, action: \.downloadQueue) {
+        DownloadQueueFeature()
       }
     }
   }
@@ -65,6 +70,7 @@ public struct LibraryFeature: Feature {
       case didTapRemoveBookmark(PlaylistCache)
       case didTapRemovePlaylist(PlaylistCache)
       case didTapShowDownloadedOnly
+      case didTapDownloadQueue
 
       case binding(BindingAction<State>)
     }

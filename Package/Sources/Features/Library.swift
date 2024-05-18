@@ -16,6 +16,7 @@ struct Library: _Feature {
         OfflineManagerClient()
         Styling()
         PlaylistDetails()
+        DownloadQueue()
         NukeUI()
         SharedModels()
     }
