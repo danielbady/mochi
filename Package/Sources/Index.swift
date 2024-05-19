@@ -16,6 +16,7 @@ let package = Package {
     PlaylistDetails()
     Discover()
     Library()
+    DownloadQueue()
     Repos()
     Search()
     Settings()

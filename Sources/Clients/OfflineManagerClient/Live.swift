@@ -70,12 +70,27 @@ extension OfflineManagerClient: DependencyKey {
           continuation.yield(values)
           
           let notifications = NotificationCenter.default.notifications(
-            named: .AssetDownloadProgress
+            named: .AssetDownloadTaskChanged
           )
           for await notification in notifications {
-            continuation.yield(downloadManager.downloadingItems.compactMap {
-            DownloadingItem(id: $0.metadata.link.url, percentComplete: $0.percentage, image: $0.playlist.posterImage ?? $0.playlist.bannerImage ?? URL(string: "")!, playlistName: $0.playlist.title ?? "", title: $0.episodeTitle, taskId: $0.taskId, status: $0.status)
-          })
+          switch notification.userInfo!["type"] as! Notification.Name {
+            case .AssetDownloadProgress:
+              let taskId = notification.userInfo?["taskId"] as! Int
+              let percent = notification.userInfo?["percent"] as! Double
+              let idx = values.firstIndex(where: { $0.taskId == taskId })!
+              values[idx].percentComplete = percent
+              break
+            case .AssetDownloadStateChanged:
+              let taskId = notification.userInfo?["taskId"] as! Int
+              let status = notification.userInfo?["status"] as! StatusType
+              let idx = values.firstIndex(where: { $0.taskId == taskId })!
+              values[idx].status = status
+              break
+            default:
+              break
+          }
+            
+            continuation.yield(values)
           }
         }
         continuation.onTermination = { _ in
@@ -141,7 +156,7 @@ private class OfflineDownloadManager: NSObject {
         
     downloadTask.resume()
     
-    NotificationCenter.default.post(name: .AssetDownloadStateChanged, object: nil, userInfo: nil)
+    NotificationCenter.default.post(name: .AssetDownloadTaskChanged, object: nil, userInfo: ["type": Notification.Name.AssetDownloadStateChanged, "taskId": downloadTask.taskIdentifier, "status": OfflineManagerClient.StatusType.downloading])
   }
   
   func togglePauseDownload(_ taskId: Int) {
@@ -150,9 +165,11 @@ private class OfflineDownloadManager: NSObject {
         if (task.state == .suspended) {
           task.resume()
           self.downloadingItems[idx].status = .downloading
+          NotificationCenter.default.post(name: .AssetDownloadTaskChanged, object: nil, userInfo: ["type": Notification.Name.AssetDownloadStateChanged, "taskId": taskId, "status": OfflineManagerClient.StatusType.downloading])
         } else if (task.state == .running) {
           task.suspend()
           self.downloadingItems[idx].status = .suspended
+          NotificationCenter.default.post(name: .AssetDownloadTaskChanged, object: nil, userInfo: ["type": Notification.Name.AssetDownloadStateChanged, "taskId": taskId, "status": OfflineManagerClient.StatusType.suspended])
         }
       }
     }
@@ -284,8 +301,8 @@ extension OfflineDownloadManager: AVAssetDownloadDelegate {
     }
     downloadingItems[idx].percentage = percentComplete
 //    debugPrint(percentComplete)
-    let params: [String : Any] = ["percent": percentComplete, "assetUrl": aggregateAssetDownloadTask.urlAsset.url]
-    NotificationCenter.default.post(name: .AssetDownloadProgress, object: nil, userInfo: params)
+    let params: [String : Any] = ["type": Notification.Name.AssetDownloadProgress, "taskId": aggregateAssetDownloadTask.taskIdentifier, "percent": percentComplete]
+    NotificationCenter.default.post(name: .AssetDownloadTaskChanged, object: nil, userInfo: params)
   }
   
   func urlSession(_ session: URLSession, aggregateAssetDownloadTask: AVAggregateAssetDownloadTask, willDownloadTo location: URL) {
@@ -299,9 +316,6 @@ extension OfflineDownloadManager: AVAssetDownloadDelegate {
   
   func urlSession(_ session: URLSession, aggregateAssetDownloadTask: AVAggregateAssetDownloadTask, didCompleteFor mediaSelection: AVMediaSelection) {
     if let downloadedAsset = downloadingItems.first(where: { $0.metadata.link.url.absoluteString == aggregateAssetDownloadTask.urlAsset.url.absoluteString.components(separatedBy: "url=").last }) {
-      guard let outputURL = try? fileClient.retrieveLibraryDirectory(root: .downloaded, playlist: downloadedAsset.playlist.id.rawValue, episode: downloadedAsset.episodeId.rawValue) else {
-        return
-      }
       do {
         try saveVideo(asset: downloadedAsset, location: downloadedAsset.location!)
       } catch {
@@ -315,10 +329,11 @@ extension OfflineDownloadManager: AVAssetDownloadDelegate {
     
     guard let task = task as? AVAggregateAssetDownloadTask else { return }
     guard error == nil else {
-      if let idx = downloadingItems.firstIndex(where: { $0.url.absoluteString == task.urlAsset.url.absoluteString.components(separatedBy: "url=").last }) {
-        downloadingItems[idx].status = .finished
-      }
       return
+    }
+    if let idx = downloadingItems.firstIndex(where: { $0.url.absoluteString == task.urlAsset.url.absoluteString.components(separatedBy: "url=").last }) {
+      downloadingItems[idx].status = .finished
+      NotificationCenter.default.post(name: .AssetDownloadTaskChanged, object: nil, userInfo: ["type": Notification.Name.AssetDownloadStateChanged, "taskId": downloadingItems[idx].taskId, "status": OfflineManagerClient.StatusType.finished])
     }
   }
 }
@@ -351,6 +366,8 @@ extension Notification.Name {
     
     /// Notification for when the download state of an Asset has changed.
     static let AssetDownloadStateChanged = Notification.Name(rawValue: "AssetDownloadStateChangedNotification")
+    
+    static let AssetDownloadTaskChanged = Notification.Name(rawValue: "AssetDownloadTaskChanged")
     
     /// Notification for when AssetPersistenceManager has completely restored its state.
     static let AssetPersistenceManagerDidRestoreState = Notification.Name(rawValue: "AssetPersistenceManagerDidRestoreStateNotification")

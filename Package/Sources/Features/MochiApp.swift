@@ -15,6 +15,7 @@ struct MochiApp: _Feature {
         Architecture()
         Discover()
         Library()
+        DownloadQueue()
         Repos()
         Settings()
         SharedModels()
