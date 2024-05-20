@@ -121,7 +121,7 @@ extension Playlist {
 // MARK: Playlist.Item
 
 extension Playlist {
-  public struct Item: Sendable, Equatable, Identifiable, Codable {
+  public struct Item: Sendable, Equatable, Identifiable, Codable, Hashable {
     public let id: Tagged<Self, String>
     public let title: String?
     public let description: String?

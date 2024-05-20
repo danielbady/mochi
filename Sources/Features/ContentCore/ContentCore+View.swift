@@ -381,7 +381,7 @@ extension ContentCore {
                   }
                   if let selectedQuality = viewStore.state.selectedQuality {
                     Button {
-                      store.send(.download(viewStore.selectedSource!, viewStore.selectedServer!, selectedQuality, viewStore.selectedSubtitle != nil ? [viewStore.selectedSubtitle!] : [], serverResponse.skipTimes, viewStore.state.episodeId, viewStore.state.episodeTitle))
+                      store.send(.download(viewStore.selectedSource!, viewStore.selectedServer!, selectedQuality, viewStore.selectedSubtitle != nil ? [viewStore.selectedSubtitle!] : [], serverResponse.skipTimes, viewStore.state.episode, serverResponse.headers))
                     } label: {
                       Text("Download")
                     }

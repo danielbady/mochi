@@ -94,9 +94,9 @@ import OfflineManagerClient
     store: .init(
       initialState: .init(
       downloadQueue: [
-        OfflineManagerClient.DownloadingItem(id: URL(string: "_blank")!, percentComplete: 0, image: URL(string: "https://fastly.picsum.photos/id/306/200/300.jpg?hmac=T-FQeWIc7YbLbcYdpyDGypNif0btJ8n5P4ozBJx8WgE")!, playlistName: "downloading", title: "Test 3", taskId: 0, status: .downloading),
-        OfflineManagerClient.DownloadingItem(id: URL(string: "_blank")!, percentComplete: 1, image: URL(string: "https://fastly.picsum.photos/id/1006/200/300.jpg?hmac=8H_lylM_UA6ot7bOUTm-ZzZkGKHmdjC-QU4yB3Xo5aQ")!, playlistName: "finished", title: "Test 2", taskId: 1, status: .finished),
-        OfflineManagerClient.DownloadingItem(id: URL(string: "_blank")!, percentComplete: 0.35, image: URL(string: "https://fastly.picsum.photos/id/978/200/300.jpg?hmac=sP2_huC-v5a6cNxpdmxp1FPInoDET7j7O3GoftdaEJk")!, playlistName: "suspended", title: "Test 1", taskId: 2, status: .suspended)
+        OfflineManagerClient.DownloadingItem(id: URL(string: "_blank")!, percentComplete: 0, image: URL(string: "https://fastly.picsum.photos/id/306/200/300.jpg?hmac=T-FQeWIc7YbLbcYdpyDGypNif0btJ8n5P4ozBJx8WgE")!, playlistName: "downloading", title: "Test 3", epNumber: 1, taskId: 0, status: .downloading),
+        OfflineManagerClient.DownloadingItem(id: URL(string: "_blank")!, percentComplete: 1, image: URL(string: "https://fastly.picsum.photos/id/1006/200/300.jpg?hmac=8H_lylM_UA6ot7bOUTm-ZzZkGKHmdjC-QU4yB3Xo5aQ")!, playlistName: "finished", title: "Test 2", epNumber: 2, taskId: 1, status: .finished),
+        OfflineManagerClient.DownloadingItem(id: URL(string: "_blank")!, percentComplete: 0.35, image: URL(string: "https://fastly.picsum.photos/id/978/200/300.jpg?hmac=sP2_huC-v5a6cNxpdmxp1FPInoDET7j7O3GoftdaEJk")!, playlistName: "suspended", title: "Test 1", epNumber: 3, taskId: 2, status: .suspended)
       ]
     ),
     reducer: { EmptyReducer() }

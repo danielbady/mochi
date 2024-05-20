@@ -104,7 +104,7 @@ public struct ContentCore: Reducer {
         return state.fetchContent(option)
           
       case let .didTapDownloadPlaylist(episode):
-        state.downloadSelection = .selection(.init(repoModuleId: state.repoModuleId, playlistId: state.playlist.id, episodeId: episode.id, episodeTitle: episode.title ?? "Unknown Title"))
+        state.downloadSelection = .selection(.init(repoModuleId: state.repoModuleId, playlistId: state.playlist.id, episode: episode))
         
       case let .didTapPlaylistItem(groupId, variantId, pageId, itemId, shouldReset):
         @Dependency(\.playlistHistoryClient) var playlistHistoryClient

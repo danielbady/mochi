@@ -65,7 +65,7 @@ extension OfflineManagerClient: DependencyKey {
       .init { continuation in
         let cancellable = Task.detached {
           var values = downloadManager.downloadingItems.compactMap {
-            DownloadingItem(id: $0.metadata.link.url, percentComplete: $0.percentage, image: $0.playlist.posterImage ?? $0.playlist.bannerImage ?? URL(string: "")!, playlistName: $0.playlist.title ?? "", title: $0.episodeTitle, taskId: $0.taskId, status: $0.status)
+            DownloadingItem(id: $0.metadata.link.url, percentComplete: $0.percentage, image: $0.playlist.posterImage ?? $0.playlist.bannerImage ?? URL(string: "")!, playlistName: $0.playlist.title ?? "", title: $0.episode.title ?? "Unknown Title", epNumber: 0, taskId: $0.taskId, status: $0.status)
           }
           continuation.yield(values)
           
@@ -123,7 +123,7 @@ private class OfflineDownloadManager: NSObject {
   public func setupAssetDownload(_ asset: OfflineManagerClient.DownloadAsset) async throws {
     await initializeRoutes(asset)
     try await server.waitUntilListening()
-    let options = [AVURLAssetAllowsCellularAccessKey: false]
+    let options = ["AVURLAssetHTTPHeaderFieldsKey": asset.headers] as [String : Any]
     let libraryFileUrl = try fileClient.retrieveLibraryDirectory(root: .playlistCache)
     let playlist = asset.playlist
     let avAsset = AVURLAsset(url: URL(string: "http://localhost:64390/download.m3u?url=\(asset.episodeMetadata.link.url.absoluteString)")!, options: options)
@@ -136,7 +136,7 @@ private class OfflineDownloadManager: NSObject {
                                                                   options: nil) else {
       throw OfflineManagerClient.Error.failedToCreateDownloadTask
     }
-    downloadingItems.append(.init(url: asset.episodeMetadata.link.url, playlist: playlist, episodeId: asset.episodeId, episodeTitle: asset.episodeTitle, metadata: asset.episodeMetadata, taskId: downloadTask.taskIdentifier, status: .downloading))
+    downloadingItems.append(.init(url: asset.episodeMetadata.link.url, playlist: playlist, episode: asset.episode, metadata: asset.episodeMetadata, taskId: downloadTask.taskIdentifier, status: .downloading))
 
     let playlistId = playlist.id.rawValue.replacingOccurrences(of: "/", with: "\\")
     let imageUrl = libraryFileUrl.appendingPathComponent(playlistId).appendingPathComponent("posterImage.jpeg")
@@ -340,7 +340,7 @@ extension OfflineDownloadManager: AVAssetDownloadDelegate {
 
 extension OfflineDownloadManager {
   private func saveVideo(asset: OfflineManagerClient.DownloadingAsset, location: URL) throws {
-    let outputURL = try fileClient.retrieveLibraryDirectory(root: .downloaded, playlist: asset.playlist.id.rawValue, episode: asset.episodeId.rawValue)
+    let outputURL = try fileClient.retrieveLibraryDirectory(root: .downloaded, playlist: asset.playlist.id.rawValue, episode: asset.episode.id.rawValue)
     debugPrint("File saved to: \(outputURL)")
     if (FileManager.default.fileExists(atPath: outputURL.path)) {
       try FileManager.default.removeItem(at: outputURL.appendingPathComponent("data").appendingPathExtension("movpkg"))

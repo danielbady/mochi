@@ -35,8 +35,7 @@ public struct DownloadSelection: Reducer {
     public struct State: Equatable, Sendable {
       public let repoModuleId: RepoModuleID
       public let playlistId: Playlist.ID
-      public let episodeId: Playlist.Item.ID
-      public let episodeTitle: String
+      public let episode: Playlist.Item
 
       public var sources: Loadable<[Playlist.EpisodeSource]>
       public var serverResponse: Loadable<Playlist.EpisodeServerResponse>
@@ -46,11 +45,10 @@ public struct DownloadSelection: Reducer {
       public var selectedQuality: Playlist.EpisodeServer.Link? = nil
       public var selectedSubtitle: Playlist.EpisodeServer.Subtitle? = nil
 
-      public init(repoModuleId: RepoModuleID, playlistId: Playlist.ID, episodeId: Playlist.Item.ID, episodeTitle: String, sources: Loadable<[Playlist.EpisodeSource]> = .pending, serverResponse: Loadable<Playlist.EpisodeServerResponse> = .pending) {
+      public init(repoModuleId: RepoModuleID, playlistId: Playlist.ID, episode: Playlist.Item, sources: Loadable<[Playlist.EpisodeSource]> = .pending, serverResponse: Loadable<Playlist.EpisodeServerResponse> = .pending) {
         self.repoModuleId = repoModuleId
         self.playlistId = playlistId
-        self.episodeId = episodeId
-        self.episodeTitle = episodeTitle
+        self.episode = episode
         self.sources = sources
         self.serverResponse = serverResponse
       }
@@ -64,7 +62,7 @@ public struct DownloadSelection: Reducer {
       case selectQuality(Playlist.EpisodeServer.Link)
       case selectSubtitle(Playlist.EpisodeServer.Subtitle)
       case serverResponse(Loadable<Playlist.EpisodeServerResponse>)
-      case download(Playlist.EpisodeSource, Playlist.EpisodeServer, Playlist.EpisodeServer.Link, [Playlist.EpisodeServer.Subtitle], [Playlist.EpisodeServer.SkipTime], Playlist.Item.ID, String)
+      case download(Playlist.EpisodeSource, Playlist.EpisodeServer, Playlist.EpisodeServer.Link, [Playlist.EpisodeServer.Subtitle], [Playlist.EpisodeServer.SkipTime], Playlist.Item, [String: String])
     }
 
     public var body: some ReducerOf<Self> {
@@ -72,7 +70,7 @@ public struct DownloadSelection: Reducer {
         switch action {
           case .didAppear:
             @Dependency(\.moduleClient) var moduleClient
-            let episodeId = state.episodeId
+            let episode = state.episode
             let playlistId = state.playlistId
             let repoModuleId = state.repoModuleId
             return .run { send in
@@ -81,7 +79,7 @@ public struct DownloadSelection: Reducer {
                   try await module.playlistEpisodeSources(
                     .init(
                       playlistId: playlistId,
-                      episodeId: episodeId
+                      episodeId: episode.id
                     )
                   )
                 }
@@ -108,7 +106,7 @@ public struct DownloadSelection: Reducer {
             guard let source = state.selectedSource else {
               return .none
             }
-            let episodeId = state.episodeId
+            let episode = state.episode
             let playlistId = state.playlistId
             let repoModuleId = state.repoModuleId
             @Dependency(\.moduleClient) var moduleClient
@@ -119,7 +117,7 @@ public struct DownloadSelection: Reducer {
                   try await module.playlistEpisodeServer(
                     .init(
                       playlistId: playlistId,
-                      episodeId: episodeId,
+                      episodeId: episode.id,
                       sourceId: source.id,
                       serverId: server.id
                     )
