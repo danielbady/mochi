@@ -2,7 +2,7 @@
 //  LibraryDirectory.swift
 //  
 //
-//  Created by DeNeRr on 24.04.2024.
+//  Created by MochiTeam on 24.04.2024.
 //
 
 import Foundation

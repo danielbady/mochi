@@ -2,7 +2,7 @@
 //  DownloadQueueFeature.swift
 //
 //
-//  Created by DeNeRr on 16.05.2024.
+//  Created by MochiTeam on 16.05.2024.
 //
 
 import Architecture

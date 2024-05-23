@@ -2,7 +2,7 @@
 //  PlaylistCache.swift
 //
 //
-//  Created by DeNeRr on 17.04.2024.
+//  Created by MochiTeam on 17.04.2024.
 //
 
 import Foundation

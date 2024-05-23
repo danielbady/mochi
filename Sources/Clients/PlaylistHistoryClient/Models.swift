@@ -2,7 +2,7 @@
 //  Models.swift
 //
 //
-//  Created by DeNeRr on 29.01.2024.
+//  Created by MochiTeam on 29.01.2024.
 //
 
 import Foundation

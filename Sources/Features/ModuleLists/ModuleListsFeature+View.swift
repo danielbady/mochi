@@ -2,7 +2,7 @@
 //  ModuleListsFeature+View.swift
 //
 //
-//  Created ErrorErrorError on 4/23/23.
+//  Created MochiTeam on 4/23/23.
 //  Copyright © 2023. All rights reserved.
 //
 
@@ -206,7 +206,7 @@ import Styling
             remoteURL: .init(string: "/").unsafelyUnwrapped,
             manifest: .init(
               name: "Local Repo",
-              author: "errorerrorerror",
+              author: "MochiTeam",
               description: "This is a local repo"
             ),
             modules: [

@@ -2,7 +2,7 @@
 //  LibraryFeature+View.swift
 //
 //
-//  Created by DeNeRr on 09.04.2024.
+//  Created by MochiTeam on 09.04.2024.
 //
 
 import Architecture

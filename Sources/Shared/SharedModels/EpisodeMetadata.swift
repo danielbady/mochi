@@ -2,7 +2,7 @@
 //  EpisodeMetadata.swift
 //
 //
-//  Created by DeNeRr on 20.04.2024.
+//  Created by MochiTeam on 20.04.2024.
 //
 
 import Foundation

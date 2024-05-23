@@ -2,7 +2,7 @@
 //  Client.swift
 //
 //
-//  Created by DeNeRr on 28.01.2024.
+//  Created by MochiTeam on 28.01.2024.
 //
 
 import DatabaseClient

@@ -2,7 +2,7 @@
 //  SettingsFeature+iOS.swift
 //
 //
-//  Created by ErrorErrorError on 11/27/23.
+//  Created by MochiTeam on 11/27/23.
 //
 //
 
@@ -44,7 +44,7 @@ private struct VersionView: View {
       Text(
         """
         Design and developed by \
-        [@errorerrorerror](https://errorerrorerror.dev) \
+        [@MochiTeam](https://MochiTeam.dev) \
         & \
         [contributors](https://github.com/Mochi-Team/mochi/contributors)
         """

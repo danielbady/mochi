@@ -2,7 +2,7 @@
 //  DownloadQueueFeature+View.swift
 //  
 //
-//  Created by DeNeRr on 17.05.2024.
+//  Created by MochiTeam on 17.05.2024.
 //
 
 import Foundation
@@ -74,6 +74,13 @@ extension DownloadQueueFeature.View: View {
                    viewStore.send(.pause(item))
                  }
                  .animation(.easeInOut, value: item.status)
+               case .error:
+                 Image(systemName: "exclamationmark.circle.fill")
+                   .resizable()
+                   .aspectRatio(contentMode: .fit)
+                   .frame(width: 29, height: 29)
+                   .foregroundStyle(Theme.pastelRed)
+                   .animation(.easeInOut, value: item.status)
              }
          }
        }

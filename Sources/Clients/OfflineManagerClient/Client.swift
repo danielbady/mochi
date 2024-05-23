@@ -2,7 +2,7 @@
 //  Client.swift
 //
 //
-//  Created by DeNeRr on 06.04.2024.
+//  Created by MochiTeam on 06.04.2024.
 //
 
 import FileClient

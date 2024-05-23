@@ -2,7 +2,7 @@
 //  Models.swift
 //
 //
-//  Created by DeNeRr on 06.04.2024.
+//  Created by MochiTeam on 06.04.2024.
 //
 
 import Foundation
@@ -13,6 +13,7 @@ extension OfflineManagerClient {
   public enum Error: Swift.Error, Equatable, Sendable {
     case failedToGetPlaylistId
     case failedToCreateDownloadTask
+    case failedToGenerateHLS
   }
   
   public enum RemoveType {
@@ -82,6 +83,7 @@ extension OfflineManagerClient {
     case suspended
     case finished
     case cancelled
+    case error
   }
   
   public struct DownloadingAsset: Hashable {

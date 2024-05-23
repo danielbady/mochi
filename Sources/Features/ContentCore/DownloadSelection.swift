@@ -2,7 +2,7 @@
 //  DownloadSection.swift
 //
 //
-//  DownloadSelection by DeNeRr on 15.04.2024.
+//  DownloadSelection by MochiTeam on 15.04.2024.
 //
 
 import Foundation

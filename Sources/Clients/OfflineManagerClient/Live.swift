@@ -2,7 +2,7 @@
 //  Live.swift
 //
 //
-//  Created by DeNeRr on 06.04.2024.
+//  Created by MochiTeam on 06.04.2024.
 //
 
 import Dependencies
@@ -14,6 +14,7 @@ import SharedModels
 import DatabaseClient
 import FlyingFox
 import OrderedCollections
+import LoggerClient
 
 // MARK: - OfflineManagerClient + DependencyKey
 
@@ -77,14 +78,16 @@ extension OfflineManagerClient: DependencyKey {
             case .AssetDownloadProgress:
               let taskId = notification.userInfo?["taskId"] as! Int
               let percent = notification.userInfo?["percent"] as! Double
-              let idx = values.firstIndex(where: { $0.taskId == taskId })!
-              values[idx].percentComplete = percent
+              if let idx = values.firstIndex(where: { $0.taskId == taskId }) {
+                values[idx].percentComplete = percent
+              }
               break
             case .AssetDownloadStateChanged:
               let taskId = notification.userInfo?["taskId"] as! Int
               let status = notification.userInfo?["status"] as! StatusType
-              let idx = values.firstIndex(where: { $0.taskId == taskId })!
-              values[idx].status = status
+              if let idx = values.firstIndex(where: { $0.taskId == taskId }) {
+                values[idx].status = status
+              }
               break
             default:
               break
@@ -121,12 +124,12 @@ private class OfflineDownloadManager: NSObject {
   }
   
   public func setupAssetDownload(_ asset: OfflineManagerClient.DownloadAsset) async throws {
-    await initializeRoutes(asset)
+    await initializeRoutes()
     try await server.waitUntilListening()
-    let options = ["AVURLAssetHTTPHeaderFieldsKey": asset.headers] as [String : Any]
+    let options = ["AVURLAssetHTTPHeaderFieldsKey": asset.headers]
     let libraryFileUrl = try fileClient.retrieveLibraryDirectory(root: .playlistCache)
     let playlist = asset.playlist
-    let avAsset = AVURLAsset(url: URL(string: "http://localhost:64390/download.m3u?url=\(asset.episodeMetadata.link.url.absoluteString)")!, options: options)
+    let avAsset = AVURLAsset(url: URL(string: "http://localhost:64390/download.m3u?url=\(asset.episodeMetadata.link.url.absoluteString.replacingOccurrences(of: "&", with: ">>"))\(!asset.episodeMetadata.subtitles.isEmpty ? "&subs=\(String(data: try JSONEncoder().encode(asset.episodeMetadata.subtitles), encoding: .utf8)!)" : "")")!, options: options)
     let preferredMediaSelection = try await avAsset.load(.preferredMediaSelection)
     
     guard let downloadTask = downloadSession.aggregateAssetDownloadTask(with: avAsset,
@@ -203,11 +206,33 @@ private class OfflineDownloadManager: NSObject {
 }
 
 extension OfflineDownloadManager {
-  private func initializeRoutes(_ asset: OfflineManagerClient.DownloadAsset) async {
+  private func initializeRoutes() async {
     await server.appendRoute("GET /download.m3u", handler: { req in
       let hlsSubtitleGroupID = "mochi-sub"
       
-      func convertMainPlaylistToMultivariant(_ url: URL, _ subtitles: [Playlist.EpisodeServer.Subtitle]) -> String {
+      func getHighestResolutionUrlFromMultivariant(_ m3u8String: String) -> String {
+        let lines = m3u8String.split(separator: "\n", omittingEmptySubsequences: false).map { String($0) }
+        var highestResIdx = 0
+        var highestRes = 0
+        
+        let regex = try! NSRegularExpression(pattern: "BANDWIDTH=(\\d+)")
+
+        
+        for (i, line) in lines.enumerated() {
+          let range = NSRange(location: 0, length: line.utf16.count)
+          if let result = regex.firstMatch(in: line, range: range) {
+            let newRes = Int(line[Range(result.range, in: line)!].split(separator: "=")[1])!
+            if (newRes > highestRes) {
+              highestRes = newRes
+              highestResIdx = i
+            }
+          }
+        }
+        
+        return lines[highestResIdx + 1]
+      }
+      
+      func convertMainPlaylistToMultivariant(_ url: String, _ subtitles: [Playlist.EpisodeServer.Subtitle]) -> String {
         // Build a multivariant playlist out of a single main playlist
         let subtitlesMediaStrings = subtitles.enumerated()
           .map(makeSubtitleTypes)
@@ -216,7 +241,7 @@ extension OfflineDownloadManager {
     #EXTM3U
     \(subtitlesMediaStrings.joined(separator: "\n"))
     #EXT-X-STREAM-INF:BANDWIDTH=640000\(!subtitles.isEmpty ? ",SUBTITLES=\"\(hlsSubtitleGroupID)\"": "")
-    \(url.absoluteString)
+    \(url)
     """
       }
       
@@ -237,10 +262,29 @@ extension OfflineDownloadManager {
         .map { "\($0.key)=\($0.value)" }
         .joined(separator: ",")
       }
+
+      var m3u8: String
+      var urlString = req.query["url"]!.replacingOccurrences(of: ">>", with: "&")
+      let rq = URLRequest(url: URL(string: urlString)!)
+      var headers = req.headers
+      headers.removeValue(forKey: .host)
+      let (data, _) = try await URLSession.shared.data(for: rq)
+      guard let string = String(data: data, encoding: .utf8) else {
+        throw OfflineManagerClient.Error.failedToGenerateHLS
+      }
+      
+      if string.contains("#EXT-X-STREAM-INF") {
+        urlString = getHighestResolutionUrlFromMultivariant(string)
+      }
+      
+      var subs: [Playlist.EpisodeServer.Subtitle] = []
+      if let subString = req.query["subs"] {
+        subs = try JSONDecoder().decode([Playlist.EpisodeServer.Subtitle].self, from: subString.data(using: .utf8)!)
+      }
+      m3u8 = convertMainPlaylistToMultivariant(urlString, subs)
       
       var path = req.path
       path.remove(at: req.path.startIndex)
-      let m3u8 = convertMainPlaylistToMultivariant(asset.episodeMetadata.link.url, asset.episodeMetadata.subtitles)
       return HTTPResponse(statusCode: .ok, headers: [.contentType: "application/vnd.apple.mpegurl"], body: m3u8.data(using: .utf8)!)
     })
     
@@ -283,7 +327,9 @@ extension OfflineDownloadManager {
       
       let idx = URL(string: req.query.first!.value)!
       let m3u8 = try await setupSubM3U8(idx)
-      return HTTPResponse(statusCode: .ok, headers: [.contentType: "application/vnd.apple.mpegurl"], body: m3u8.data(using: .utf8)!)
+      var headers = req.headers
+      headers.updateValue("application/vnd.apple.mpegurl", forKey: .contentType)
+      return HTTPResponse(statusCode: .ok, headers: headers, body: m3u8.data(using: .utf8)!)
     })
   }
 }
@@ -296,7 +342,10 @@ extension OfflineDownloadManager: AVAssetDownloadDelegate {
       let loadedTimeRange: CMTimeRange = value.timeRangeValue
       return rc + Double((loadedTimeRange.duration.seconds / timeRangeExpectedToLoad.duration.seconds))
     }
-    guard let idx = downloadingItems.firstIndex(where: { $0.metadata.link.url.absoluteString == aggregateAssetDownloadTask.urlAsset.url.absoluteString.components(separatedBy: "url=").last }) else {
+    guard let idx = downloadingItems.firstIndex(where: {
+      let components = NSURLComponents(url: aggregateAssetDownloadTask.urlAsset.url, resolvingAgainstBaseURL: true)
+      return $0.metadata.link.url.absoluteString == components?.queryItems?.first(where: { $0.name == "url" })?.value
+    }) else {
       return
     }
     downloadingItems[idx].percentage = percentComplete
@@ -307,7 +356,8 @@ extension OfflineDownloadManager: AVAssetDownloadDelegate {
   
   func urlSession(_ session: URLSession, aggregateAssetDownloadTask: AVAggregateAssetDownloadTask, willDownloadTo location: URL) {
     guard let idx = downloadingItems.firstIndex(where: {
-    return $0.metadata.link.url.absoluteString == aggregateAssetDownloadTask.urlAsset.url.absoluteString.components(separatedBy: "url=").last
+      let components = NSURLComponents(url: aggregateAssetDownloadTask.urlAsset.url, resolvingAgainstBaseURL: true)
+      return $0.metadata.link.url.absoluteString == components?.queryItems?.first(where: { $0.name == "url" })?.value
     }) else {
       return
     }
@@ -315,7 +365,10 @@ extension OfflineDownloadManager: AVAssetDownloadDelegate {
   }
   
   func urlSession(_ session: URLSession, aggregateAssetDownloadTask: AVAggregateAssetDownloadTask, didCompleteFor mediaSelection: AVMediaSelection) {
-    if let downloadedAsset = downloadingItems.first(where: { $0.metadata.link.url.absoluteString == aggregateAssetDownloadTask.urlAsset.url.absoluteString.components(separatedBy: "url=").last }) {
+    if let downloadedAsset = downloadingItems.first(where: {
+      let components = NSURLComponents(url: aggregateAssetDownloadTask.urlAsset.url, resolvingAgainstBaseURL: true)
+      return $0.metadata.link.url.absoluteString == components?.queryItems?.first(where: { $0.name == "url" })?.value
+    }) {
       do {
         try saveVideo(asset: downloadedAsset, location: downloadedAsset.location!)
       } catch {
@@ -328,10 +381,16 @@ extension OfflineDownloadManager: AVAssetDownloadDelegate {
     debugPrint("Task completed: \(task), error: \(String(describing: error))")
     
     guard let task = task as? AVAggregateAssetDownloadTask else { return }
-    guard error == nil else {
-      return
-    }
-    if let idx = downloadingItems.firstIndex(where: { $0.url.absoluteString == task.urlAsset.url.absoluteString.components(separatedBy: "url=").last }) {
+    if let idx = downloadingItems.firstIndex(where: {
+      let components = NSURLComponents(url: task.urlAsset.url, resolvingAgainstBaseURL: true)
+      return $0.url.absoluteString == components?.queryItems?.first(where: { $0.name == "url" })?.value
+    }) {
+      guard error == nil else {
+        downloadingItems[idx].status = .error
+        NotificationCenter.default.post(name: .AssetDownloadTaskChanged, object: nil, userInfo: ["type": Notification.Name.AssetDownloadStateChanged, "taskId": downloadingItems[idx].taskId, "status": OfflineManagerClient.StatusType.error])
+        logger.error("\(error)")
+        return
+      }
       downloadingItems[idx].status = .finished
       NotificationCenter.default.post(name: .AssetDownloadTaskChanged, object: nil, userInfo: ["type": Notification.Name.AssetDownloadStateChanged, "taskId": downloadingItems[idx].taskId, "status": OfflineManagerClient.StatusType.finished])
     }
