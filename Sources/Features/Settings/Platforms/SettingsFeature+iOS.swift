@@ -44,9 +44,7 @@ private struct VersionView: View {
       Text(
         """
         Design and developed by \
-        [@MochiTeam](https://MochiTeam.dev) \
-        & \
-        [contributors](https://github.com/Mochi-Team/mochi/contributors)
+        [the community](https://mochisite.vercel.app)
         """
       )
       .multilineTextAlignment(.center)
