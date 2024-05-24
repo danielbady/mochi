@@ -62,6 +62,9 @@ extension OfflineManagerClient: DependencyKey {
     togglePause: { taskId in
       downloadManager.togglePauseDownload(taskId)
     },
+    cancel: { taskId in
+      downloadManager.cancelDownload(taskId)
+    },
     observeDownloading: {
       .init { continuation in
         let cancellable = Task.detached {
@@ -175,6 +178,16 @@ private class OfflineDownloadManager: NSObject {
           NotificationCenter.default.post(name: .AssetDownloadTaskChanged, object: nil, userInfo: ["type": Notification.Name.AssetDownloadStateChanged, "taskId": taskId, "status": OfflineManagerClient.StatusType.suspended])
         }
       }
+    }
+  }
+  
+  func cancelDownload(_ taskId: Int) {
+    downloadSession.getAllTasks { taskArray in
+      taskArray.first(where: { $0.taskIdentifier == taskId })?.cancel()
+      if let idx = self.downloadingItems.firstIndex(where: { $0.taskId == taskId }) {
+        self.downloadingItems.remove(at: idx)
+      }
+      NotificationCenter.default.post(name: .AssetDownloadTaskChanged, object: nil, userInfo: ["type": Notification.Name.AssetDownloadStateChanged, "taskId": taskId, "status": OfflineManagerClient.StatusType.cancelled])
     }
   }
   

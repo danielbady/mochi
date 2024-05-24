@@ -19,6 +19,11 @@ extension DownloadQueueFeature: Reducer {
               await send(.internal(.updateDownloadingItems(items)))
             }
           }
+          
+        case let .view(.didTapCancelDownload(item)):
+          return .run { send in
+            try await offlineManagerClient.cancel(item.taskId)
+          }
         
         case let .view(.pause(item)):
           return .run { send in

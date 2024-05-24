@@ -30,6 +30,7 @@ public struct DownloadQueueFeature: Feature {
     @dynamicMemberLookup
     public enum ViewAction: SendableAction {
       case didAppear
+      case didTapCancelDownload(OfflineManagerClient.DownloadingItem)
       case pause(OfflineManagerClient.DownloadingItem)
     }
 

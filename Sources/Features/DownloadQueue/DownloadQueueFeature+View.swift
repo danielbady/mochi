@@ -37,51 +37,65 @@ extension DownloadQueueFeature.View: View {
            }
            
            Spacer()
-             switch item.status {
-               case .suspended:
-                 CircularProgressView(progress: item.percentComplete, barStyle: .init(fill: Theme.pastelRed.opacity(0.4), width: 4, blurRadius: 0)) {
-                   Image(systemName: "play.fill")
-                     .resizable()
-                     .aspectRatio(contentMode: .fit)
-                     .padding(6)
-                     .foregroundStyle(Theme.pastelRed)
-                 }
-                 .onTapGesture {
-                   viewStore.send(.pause(item))
-                 }
-                 .frame(width: 30, height: 30)
-                 .animation(.easeInOut, value: item.status)
-               case .finished:
-                 Image(systemName: "checkmark.circle.fill")
+           switch item.status {
+             case .suspended:
+               CircularProgressView(progress: item.percentComplete, barStyle: .init(fill: Theme.pastelRed.opacity(0.4), width: 4, blurRadius: 0)) {
+                 Image(systemName: "play.fill")
                    .resizable()
                    .aspectRatio(contentMode: .fit)
-                   .frame(width: 29, height: 29)
+                   .padding(6)
                    .foregroundStyle(Theme.pastelRed)
-                   .animation(.easeInOut, value: item.status)
-               case .cancelled:
-                 EmptyView()
-               case .downloading:
-                 CircularProgressView(progress: item.percentComplete, barStyle: .init(fill: Theme.pastelRed, width: 4, blurRadius: 0)) {
-                   Image(systemName: "pause.fill")
-                     .resizable()
-                     .aspectRatio(contentMode: .fit)
-                     .padding(6)
-                     .foregroundStyle(Theme.pastelRed)
-                 }
-                 .frame(width: 30, height: 30)
-                 .contentShape(Rectangle())
-                 .onTapGesture {
-                   viewStore.send(.pause(item))
-                 }
+               }
+               .onTapGesture {
+                 viewStore.send(.pause(item))
+               }
+               .frame(width: 30, height: 30)
+               .animation(.easeInOut, value: item.status)
+             case .finished:
+               Image(systemName: "checkmark.circle")
+                 .resizable()
+                 .aspectRatio(contentMode: .fit)
+                 .frame(width: 29, height: 29)
+                 .foregroundStyle(Theme.pastelRed)
                  .animation(.easeInOut, value: item.status)
-               case .error:
-                 Image(systemName: "exclamationmark.circle.fill")
+             case .cancelled:
+               Image(systemName: "xmark.circle")
+                 .resizable()
+                 .aspectRatio(contentMode: .fit)
+                 .frame(width: 29, height: 29)
+                 .foregroundStyle(Color.secondary.opacity(0.4))
+                 .animation(.easeInOut, value: item.status)
+             case .downloading:
+               CircularProgressView(progress: item.percentComplete, barStyle: .init(fill: Theme.pastelRed, width: 4, blurRadius: 0)) {
+                 Image(systemName: "pause.fill")
                    .resizable()
                    .aspectRatio(contentMode: .fit)
-                   .frame(width: 29, height: 29)
+                   .padding(6)
                    .foregroundStyle(Theme.pastelRed)
-                   .animation(.easeInOut, value: item.status)
-             }
+               }
+               .frame(width: 30, height: 30)
+               .contentShape(Rectangle())
+               .onTapGesture {
+                 viewStore.send(.pause(item))
+               }
+               .animation(.easeInOut, value: item.status)
+             case .error:
+               Image(systemName: "exclamationmark.circle")
+                 .resizable()
+                 .aspectRatio(contentMode: .fit)
+                 .frame(width: 29, height: 29)
+                 .foregroundStyle(Theme.pastelRed)
+                 .animation(.easeInOut, value: item.status)
+           }
+         }
+         .contentShape(Rectangle())
+         .contextMenu {
+           Button(role: .destructive) {
+             viewStore.send(.didTapCancelDownload(item))
+           } label: {
+             Label("Cancel Download", systemImage: "xmark")
+           }
+           .buttonStyle(.plain)
          }
        }
      }
