@@ -94,6 +94,9 @@ public struct DownloadSelection: Reducer {
 
           case let .selectSource(source):
             state.selectedSource = source
+            state.serverResponse = .pending
+            state.selectedQuality = nil
+            state.selectedSubtitle = nil
 
           case let .selectQuality(quality):
             state.selectedQuality = quality
@@ -103,6 +106,8 @@ public struct DownloadSelection: Reducer {
 
           case let .selectServer(server):
             state.serverResponse = .loading
+            state.selectedQuality = nil
+            state.selectedSubtitle = nil
             guard let source = state.selectedSource else {
               return .none
             }

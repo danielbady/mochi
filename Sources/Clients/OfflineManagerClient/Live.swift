@@ -185,6 +185,9 @@ private class OfflineDownloadManager: NSObject {
     downloadSession.getAllTasks { taskArray in
       taskArray.first(where: { $0.taskIdentifier == taskId })?.cancel()
       if let idx = self.downloadingItems.firstIndex(where: { $0.taskId == taskId }) {
+        if let location = self.downloadingItems[idx].location {
+          try? self.fileClient.remove(location);
+        }
         self.downloadingItems.remove(at: idx)
       }
       NotificationCenter.default.post(name: .AssetDownloadTaskChanged, object: nil, userInfo: ["type": Notification.Name.AssetDownloadStateChanged, "taskId": taskId, "status": OfflineManagerClient.StatusType.cancelled])
@@ -278,9 +281,12 @@ extension OfflineDownloadManager {
 
       var m3u8: String
       var urlString = req.query["url"]!.replacingOccurrences(of: ">>", with: "&")
-      let rq = URLRequest(url: URL(string: urlString)!)
+      var rq = URLRequest(url: URL(string: urlString)!)
       var headers = req.headers
       headers.removeValue(forKey: .host)
+      headers.forEach { (key, value) in
+        rq.addValue(value, forHTTPHeaderField: key.rawValue)
+      }
       let (data, _) = try await URLSession.shared.data(for: rq)
       guard let string = String(data: data, encoding: .utf8) else {
         throw OfflineManagerClient.Error.failedToGenerateHLS
