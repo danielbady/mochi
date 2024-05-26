@@ -309,7 +309,13 @@ extension OfflineDownloadManager {
     
     await server.appendRoute("GET /subs.m3u8", handler: { req in
       func setupSubM3U8(_ url: URL) async throws -> String {
-        let (data, _) = try await URLSession.shared.data(for: .init(url: url))
+        var rq = URLRequest(url: URL(string: url.absoluteString)!)
+        var headers = req.headers
+        headers.removeValue(forKey: .host)
+        headers.forEach { (key, value) in
+          rq.addValue(value, forHTTPHeaderField: key.rawValue)
+        }
+        let (data, _) = try await URLSession.shared.data(for: rq)
         let vttString = String(data: data , encoding: .utf8)!
         
         let lastTimeStampString = (
