@@ -113,7 +113,7 @@ public struct ContentCore: Reducer {
         let item = state.item(groupId: groupId, variantId: variantId, pageId: pageId, itemId: itemId).value
         return .run { _ in
           if let item {
-            try? await playlistHistoryClient.updateEpId(.init(
+            try await playlistHistoryClient.updateEpId(.init(
               rmp: .init(repoId: repoModuleId.repoId.absoluteString, moduleId: repoModuleId.moduleId.rawValue, playlistId: playlist.id.rawValue),
               episode: .init(id: item.id.rawValue, title: item.title ?? "Unknown", thumbnail: item.thumbnail ?? playlist.posterImage ?? playlist.bannerImage),
               playlistName: playlist.title,

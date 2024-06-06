@@ -22,6 +22,7 @@ private enum Cancellables: Hashable, CaseIterable {
   case delayCloseTab
   case fetchingSources
   case fetchingServer
+  case updateTimestamp
 }
 
 // MARK: - VideoPlayerFeature + Reducer
@@ -43,10 +44,18 @@ extension VideoPlayerFeature: Reducer {
           state.content.fetchContent(.page(state.selected.groupId, state.selected.variantId, state.selected.pageId))
             .map { .internal(.content($0)) },
           .run { send in
-            for await status in playerClient.observe() {
-              if let progress = status.playback?.progress {
-                try? await playlistHistoryClient.updateTimestamp(.init(repoId: repoModule.repoId.absoluteString, moduleId: repoModule.moduleId.rawValue, playlistId: groupId), progress)
+            try await withTaskCancellation(id: Cancellables.updateTimestamp) {
+              while (true) {
+                try await Task.sleep(nanoseconds: 1_000_000_000)
+                let status = playerClient.get()
+                if let progress = status.playback?.progress {
+                  try? await playlistHistoryClient.updateTimestamp(.init(repoId: repoModule.repoId.absoluteString, moduleId: repoModule.moduleId.rawValue, playlistId: groupId), progress)
+                }
               }
+            }
+          },
+          .run { send in
+            for await status in playerClient.observe() {
               await send(.internal(.playerStatusUpdate(status)))
             }
           }
@@ -311,7 +320,6 @@ extension VideoPlayerFeature.State {
         fetchSourcesIfNecessary(),
         .run { _ in
           await playerClient.clear()
-          try? await playlistHistoryClient.updateTimestamp(.init(repoId: repoModule.repoId.absoluteString, moduleId: repoModule.moduleId.rawValue, playlistId: groupId.rawValue), 0)
         }
       )
     }
