@@ -1013,7 +1013,7 @@ import Foundation
 
 struct CustomDump: PackageDependency {
     var dependency: Package.Dependency {
-        .package(url: "https://github.com/pointfreeco/swift-custom-dump", from: "1.0.0")
+        .package(url: "https://github.com/pointfreeco/swift-custom-dump", from: "1.2.1")
     }
 }
 //
